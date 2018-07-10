@@ -1,0 +1,7 @@
+
+
+foundation:
+  host: localhost
+  priv: ~/.ssh/id_ed25519
+  user: pmichalec
+  sudo: True

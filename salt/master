@@ -1,0 +1,15 @@
+log_level: info
+root_dir: ./
+pillar_roots:
+  base:
+  - salt/pillars
+  #- salt/env/base/pillars
+  #- salt/env/prod/pillars
+file_roots:
+  base:
+  - salt/states
+  #- salt/env/base/states
+  #- salt/env/prod/states
+pki_dir: .pki
+cachedir: .cache
+ssh_log_file: .logs/salt-ssh.log
