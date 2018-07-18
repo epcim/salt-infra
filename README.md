@@ -25,7 +25,59 @@ Optional:
 * salt(ed) container matrix builds per salt/reclass/formula/os version
 * re-use share system and service "level" pillar data with best-practice default values
 
+
+## Setup
+
+    # direnv is optional
+    apt-get install -y direnv python-pipenv
+
+### Configure python env
+
+To add custom python dependencies (reclass):
+
+    $EDITOR ./Pipfile
+
+
+### Activate virtual environment the environment
+
+    # use direnv
+    direnv allow .
+
+    # or
+    pipenv install
+    pipenv shell
+
+### Configure salt
+
+    # example: enable reclass
+    cp salt/master.d.examples/reclass.conf salt/master.d/
+
+### Configure salt environments
+
+If you intend to use salt environments for (pillars, states) export SALT_ENV.
+
+Example:
+
+    # add to .envrc
+    SALT_ENV=env/staging
+
 ## Usage
 
-TBD
+### Basic
+
+    # update use() function, to specify formulas to use
+    $EDITOR ./Formulafile
+
+    # update rooster with your minions
+    $EDITOR salt/roster
+
+    # install formulas
+    ./Formulafile
+
+    # salt it!
+    salt-ssh foundation user.list_users
+    salt-ssh foundation virtng.list_vms
+    salt-ssh foundation pillar.items
+    salt-ssh \* state.show_states
+    salt-ssh \* state.apply
 

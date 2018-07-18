@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[dev-packages]
+
+[packages]
+salt-ssh = "*"
+pygithub = "*"
+
+[optional-packages]
+# NOTE, pipenv don't support groups, copy line to [packages]
+reclass = {git = "https://github.com/salt-formulas/reclass"}
+
+[requires]
+python_version = "2.7"

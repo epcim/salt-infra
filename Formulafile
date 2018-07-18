@@ -10,6 +10,7 @@ use() {
   formula https://github.com/salt-formulas/salt-formula-linux
   formula https://github.com/salt-formulas/salt-formula-salt
   formula https://github.com/salt-formulas/salt-formula-fluentbit
+  formula https://github.com/saltstack-formulas/users-formula
 
 # Option 2, all formulas from an GH org:
   #FORMULA_VERSION="${SALT_FORMULA_VERSION:-master}"
