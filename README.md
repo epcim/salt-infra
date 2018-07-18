@@ -50,7 +50,7 @@ To add custom python dependencies (reclass):
 ### Configure salt
 
     # example: enable reclass
-    cp salt/master.d.examples/reclass.conf salt/master.d/
+    cp salt/examples.d/reclass.conf salt/master.d/
 
 ### Configure salt environments
 
@@ -78,6 +78,17 @@ Example:
     salt-ssh foundation user.list_users
     salt-ssh foundation virtng.list_vms
     salt-ssh foundation pillar.items
-    salt-ssh \* state.show_states
     salt-ssh \* state.apply
+
+    # list states
+    salt-ssh \* state.show_states (>2018.3)
+    salt-ssh \* pillar.get __reclass__:applications
+
+### Ad-hoc shoots
+
+    # alternative roster
+    salt-ssh --roster sshconfig \* test.ping
+
+    # TODO, salt-ssh -> saltify, contributors are welcome ;)
+    # salt-ssh --roster cloud \* -r uptime
 
