@@ -1,0 +1,12 @@
+
+{% set hosts  = 'foundation kube1 kube2 kube3 kcm1 kcm2'.split() %}
+{% set domain = 'openstack.lab.local' %}
+{% set user   = 'root' %}
+{% set pass   = 'r00tme' %}
+
+{% for host in hosts %}
+{{ host~'.'~domain }}:
+  host: {{ host }}
+  user: {{ user }}
+  passwd: {{ pass }}
+{% endfor %}

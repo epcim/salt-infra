@@ -92,3 +92,17 @@ Example:
     # TODO, salt-ssh -> saltify, contributors are welcome ;)
     # salt-ssh --roster cloud \* -r uptime
 
+
+## Backlog
+
+Things to do later.
+
+Use pre installed salt master container (https://github.com/epcim/docker-salt-formulas) and salt-ssh from it with SSH agent forwarded:
+
+     # forward local ssh-agent
+     docker run -rm -t -i -v $(dirname $SSH_AUTH_SOCK) $SALT_MASTER_VOLUMES -e SSH_AUTH_SOCK=$SSH_AUTH_SOCK $SALT_MASTER_IMAGE /bin/bash
+
+Generate roster file for TF with jinja ;)
+
+    https://gist.github.com/epcim/9df044c53d2dca3cd7115419a487ec02
+
