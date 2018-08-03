@@ -10,28 +10,43 @@ SIMAGE=${2:-epcim/salt:saltmaster-reclass-ubuntu-xenial-salt-stable-formula-mast
 SOURCE=${RECLASS_ROOT:-/srv/salt/reclass}
 DMODEL=$(realpath $DMODEL)
 
-# get list of used classes                                                         # filter system/service and replace "." with "/"
-declare -a classes
-classes=($(cat $(find ${DMODEL} -name '*.yml')| sed -ne '/classes:/,/^[\w*]+/p;' |sed -n '/^\s*-/p' |sed -e 's/^[ -]*//g' | sed -e 's:\.:/:g' | grep -e '^\/*system\|^\/*service' |sort -u ))
 
-# copy
-if [[ -n "${classes[@]}" ]]; then
-  docker run --rm -i -v $DMODEL:/model --entrypoint bash ${SIMAGE} <<-EOF
-    # debug
-    #for cls in ${classes[@]}; do
-    #  echo rsync -avhmL --recursive --include "***\$cls***" --include='*/' --exclude='*' ${SOURCE}/classes/ /model ;
-    #done;
+function sync() {
+  # get list of used classes                                                         # filter system/service and replace "." with "/"
+  declare -a classes
+  classes=($(cat $(find ${DMODEL} -name '*.yml')| sed -ne '/classes:/,/^[\w*]+/p;' |sed -n '/^\s*-/p' |sed -e 's/^[ -]*//g' | sed -e 's:\.:/:g' | grep -e '^\/*system\|^\/*service' |sort -u ))
 
-    # rsync with pattern
-    for cls in ${classes[@]}; do
-      rsync -avhmL --recursive --include "***\$cls***" --include='*/' --exclude='*' ${SOURCE}/classes/ /model | grep '^[systemservice]*/' ;
-    done;
-	EOF
+  # copy
+  if [[ -n "${classes[@]}" ]]; then
+    docker run --rm -i -v $DMODEL:/model --entrypoint bash ${SIMAGE} <<-EOF
+      # debug
+      #for cls in ${classes[@]}; do
+      #  echo rsync -avhmL --recursive --include "***\$cls***" --include='*/' --exclude='*' ${SOURCE}/classes/ /model ;
+      #done;
 
-  # replace path to class
+      # rsync with pattern
+      for cls in ${classes[@]}; do
+        rsync -avhmL --recursive --include "***\$cls***" --include='*/' --exclude='*' ${SOURCE}/classes/ /model | grep '^[systemservice]*/' ;
+      done;
+		EOF
 
-  # fix ownership
-  U=$USER
-  [[ -d $DMODEL/service ]] && sudo chown $U -R $DMODEL/service || true
-  [[ -d $DMODEL/system  ]] && sudo chown $U -R $DMODEL/system  || true
-fi
+    # replace path to class
+
+    # fix ownership
+    U=$USER
+    [[ -d $DMODEL/service ]] && sudo chown $U -R $DMODEL/service || true
+    [[ -d $DMODEL/system  ]] && sudo chown $U -R $DMODEL/system  || true
+  fi
+}
+
+function prefix_classes() {
+  # replace:
+  # - class.name
+  # with:
+  # - ${cluster}.class.name
+  PREFIX=${1:-'${cluster}'}
+  ls $(find ${DMODEL}/{service,system} -name '*.yml') | xargs -rn1 -I% sed -i -e '/^classes:/,/^[a-zA-Z0-9_-]*:/!b' -e "s:- \(system\|service\):- ${PREFIX}.\1:g" %
+}
+
+#sync
+prefix_classes

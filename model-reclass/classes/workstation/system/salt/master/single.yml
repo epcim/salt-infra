@@ -1,7 +1,10 @@
 classes:
-- service.git.client
-- service.salt.master.single
+- ${cluster}.service.git.client
+- ${cluster}.system.salt.master.single
 parameters:
+  some:
+    - service.other
+    - service.shit
   linux:
     system:
       sysctl:
@@ -18,3 +21,5 @@ parameters:
       peer:
         '.*':
           - x509.sign_remote_certificate
+
+- service.another

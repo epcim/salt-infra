@@ -1,2 +1,0 @@
-classes:
-  - ${cluster}.system.salt.master.single
