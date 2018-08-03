@@ -1,0 +1,19 @@
+parameters:
+  salt:
+    _orchestrate:
+      priority: 20
+    _support:
+      telegraf:
+        enabled: true
+      prometheus:
+        enabled: true
+      collectd:
+        enabled: false
+      heka:
+        enabled: true
+      sensu:
+        enabled: true
+      sphinx:
+        enabled: true
+      backupninja:
+        enabled: true

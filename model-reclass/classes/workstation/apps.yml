@@ -1,0 +1,10 @@
+
+classes:
+  #- workstation
+  - ${cluster}.service.git.client
+
+
+parameters:
+  #cluster: workstation
+  _param:
+    nic: je nic

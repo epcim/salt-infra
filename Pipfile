@@ -8,10 +8,11 @@ name = "pypi"
 [packages]
 salt-ssh = "*"
 pygithub = "*"
+reclass = {git = "https://github.com/salt-formulas/reclass", editable=true}
+# ^^ pipenv install -e git+https://github.com/salt-formulas/reclass.git#egg=reclass
 
 [optional-packages]
-# NOTE, pipenv don't support groups, copy line to [packages]
-reclass = {git = "https://github.com/salt-formulas/reclass"}
+# NOTE, IMHO pipenv don't support groups, use line to [dev-packages]
 
 [requires]
 python_version = "2.7"

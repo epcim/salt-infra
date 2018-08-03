@@ -6,6 +6,7 @@
 
 
 use() {
+
 # Option 1, specific formula
   formula https://github.com/salt-formulas/salt-formula-linux
   formula https://github.com/salt-formulas/salt-formula-salt

@@ -1,0 +1,6 @@
+applications:
+- git
+parameters:
+  git:
+    client:
+      enabled: true
