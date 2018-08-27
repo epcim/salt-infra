@@ -5,6 +5,9 @@ base:
     - users
     - linux.system.motd
 
+  'foundation':
+    - reclass
+
 #
 #    - linux.system.repo2
 #  'os:Ubuntu':

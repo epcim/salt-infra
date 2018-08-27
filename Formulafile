@@ -10,6 +10,7 @@ use() {
 # Option 1, specific formula
   formula https://github.com/salt-formulas/salt-formula-linux
   formula https://github.com/salt-formulas/salt-formula-salt
+  formula https://github.com/salt-formulas/salt-formula-reclass
   formula https://github.com/salt-formulas/salt-formula-fluentbit
   formula https://github.com/saltstack-formulas/users-formula
 

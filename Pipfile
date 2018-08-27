@@ -9,6 +9,12 @@ name = "pypi"
 salt-ssh = "*"
 pygithub = "*"
 reclass = {git = "https://github.com/salt-formulas/reclass", editable=true}
+libvirt-python = "*"
+pycrypto = "*"
+python-openstackclient = "*"
+os-client-config = "*"
+shade = "*"
+#reclass = {git = "https://github.com/salt-formulas/reclass", editable=true}
 # ^^ pipenv install -e git+https://github.com/salt-formulas/reclass.git#egg=reclass
 
 [optional-packages]

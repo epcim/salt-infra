@@ -50,7 +50,7 @@ To add custom python dependencies (reclass):
 ### Configure salt
 
     # example: enable reclass
-    cp salt/examples.d/reclass.conf salt/master.d/
+    cp salt/examples/reclass.conf salt/master.d/
 
 ### Configure salt environments
 

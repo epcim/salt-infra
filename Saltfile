@@ -1,2 +1,13 @@
 salt-ssh:
   config_dir: ./salt
+
+salt-cloud:
+  config_dir: ./salt
+
+
+# opitionated below:
+salt-run:
+  config_dir: ./salt
+
+salt:
+  config_dir: ./salt

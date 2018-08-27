@@ -1,6 +1,0 @@
-classes:
-  #- workstation.0
-  - ${cluster}.apps
-  - ${cluster}.system.linux.system.motd.${motd}
-
-
