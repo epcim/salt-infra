@@ -1,3 +1,6 @@
+
+id: foundation
+
 log_level: info
 root_dir: ./
 pillar_roots:
@@ -10,6 +13,10 @@ file_roots:
   - salt/states
   #- salt/env/base/states
   #- salt/env/prod/states
+
 pki_dir: .pki
-cachedir: .cache
-ssh_log_file: .logs/salt-ssh.log
+
+# logging
+#ssh_log_file: .var/log/salt/salt-ssh
+#log_file: .var/log/salt/master
+#cachedir: .var/cache

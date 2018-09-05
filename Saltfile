@@ -8,6 +8,8 @@ salt-cloud:
 # opitionated below:
 salt-run:
   config_dir: ./salt
+  #id: foundation
 
 salt:
   config_dir: ./salt
+  #id: foundation

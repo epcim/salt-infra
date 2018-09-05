@@ -1,4 +1,0 @@
-parameters:
-  cluster: workstation
-  motd: dynamic
-
