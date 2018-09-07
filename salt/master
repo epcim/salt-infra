@@ -7,12 +7,10 @@ pillar_roots:
   base:
   - salt/pillars
   #- salt/env/base/pillars
-  #- salt/env/prod/pillars
 file_roots:
   base:
   - salt/states
   #- salt/env/base/states
-  #- salt/env/prod/states
 
 pki_dir: .pki
 

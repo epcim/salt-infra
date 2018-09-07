@@ -39,12 +39,15 @@ Finally, this repository assumes to be mounted as volume into an salt ready cont
 
     git clone https://github.com/epcim/salt-gun
 
+    # define salt env
+    export SALT_ENV=env/prod
+    envtpl --keep-template salt/master.d/env.conf.tpl
+
     # clone Your model
-    ENV=env/prod
-    git clone https://github.com/epcim/salt-model-kubernetes salt/$ENV
+    git clone https://github.com/epcim/salt-model-kubernetes salt/$SALT_ENV
 
     # add another environment (optional)
-    cd salt/$ENV
+    cd salt/$SALT_ENV
     git worktree add --checkout -b staging ../staging origin/staging
     git worktree list
 
@@ -97,9 +100,11 @@ If you intend to use salt environments for (pillars, states) export SALT_ENV.
 Example:
 
     # add to .envrc
-    SALT_ENV=env/staging
+    SALT_ENV=env/base
 
-> You may want to configure ENV used in your `salt/master*` configuration file.
+    # configure master
+    envtpl --keep-template salt/master.d/env.conf.tpl
+
 
 ## Usage
 
@@ -165,7 +170,8 @@ Reclass (The fork I use: https://github.com/salt-formulas/reclass) is handy YAML
 
 Enable reclass:
 
-    # envtpl (jinja2 engine) is used to properly set $ENV variable
+    # envtpl (jinja2 engine) is used to properly set $SALT_ENV variable
+    export SALT_ENV=env/base
     envtpl --keep-template salt/master.d/reclass.conf.tpl
 
 > Mind `salt/$ENV/reclass/pillars` are added to salt pillar path.
@@ -178,18 +184,18 @@ Clone your model repository:
 
 FIXME, TODO: set model as subrepo or do a trick with tracking other remote/branch
 
-    git clone https://github.com/epcim/salt-model-kubernetes salt/$ENV
+    git clone https://github.com/epcim/salt-model-kubernetes salt/$SALT_ENV
 
 Add another environment from a branch (optional)
 
-    cd salt/$ENV
+    cd salt/$SALT_ENV
     git worktree add --checkout -b staging ../staging origin/staging
     git worktree list
 
 
 > Mind the `.doc(s)` folder on the example model repository.
 
-Your `salt/$ENV` might have these folders:
+Your `salt/$SALT_ENV` might have these folders:
 
   - pillars (initial/additional salt pillars)
   - states (additional salt states)
@@ -200,15 +206,15 @@ Your `salt/$ENV` might have these folders:
 Let's setup your new remote salt-master:
 
     # set salt-master node
-    cat salt/$ENV/.docs/nodes-saltmaster.yml | envtpl | tee > salt/$ENV/reclass/nodes/<minion_id>.yml
+    cat salt/$SALT_ENV/.docs/nodes-saltmaster.yml | envtpl | tee > salt/$SALT_ENV/reclass/nodes/<minion_id>.yml
 
 
 If you will want to use salt-run (setup foundation node):
 
-    ln -s salt/$ENV/reclass/nodes/<minion_id>.yml salt/$ENV/reclass/nodes/foundation.yml
+    ln -s salt/$SALT_ENV/reclass/nodes/<minion_id>.yml salt/$SALT_ENV/reclass/nodes/foundation.yml
 
     # update your foundation configuration, if needed
-    vim salt/$ENV/reclass/nodes/foundation.yml
+    vim salt/$SALT_ENV/reclass/nodes/foundation.yml
 
 
 Let's run some checks:
@@ -224,7 +230,7 @@ TBD
 
 Clone your model.
 
-Your `salt/$ENV` might have these folders:
+Your `salt/$SALT_ENV` might have these folders:
 
   - pillars (initial/additional salt pillars)
   - states (additional salt states)
