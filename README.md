@@ -1,5 +1,5 @@
 
-# I'm a Gangster so here is my "gun".
+# I'm a Gangster so here is my "gun" salt Salt.
 
 This repository is minimal salt bootstrap workflow for thees who ever considered
 use salt modern, light.
@@ -9,7 +9,7 @@ It bit target's "ansible like" usage, but "keep calm".
 
 The overall "minimalist" concepts:
 
-1. Clone model repo, fetch formulas, use salt-ssh, salt-cloud to manage hosts master-less
+1. Clone model repo, fetch base formulas, use salt-ssh, salt-cloud to manage hosts master-less
 2. Clone model repo, start containerized salt-master, use salt-ssh, salt-cloud to saltify/shoot minions
 3. Do (1) to bootstrap your salt-master from foundation node and do (2) to deploy salted infrastructure.
 
@@ -27,14 +27,38 @@ Optional:
   - reclass as node classifier
   - nacl for pillar encryption
   - ...
+* enjoy multiple salt environments
 * salt(ed) container matrix builds per salt/os/arch/[reclass|formula|...] version
-* re-use share system and service "level" pillar data with best-practice default values
+* re-usable model, shared pillar data with best-practice default values
+
+Finally, this repository assumes to be mounted as volume into an salt ready container.
+
+
+
+## TL;DR
+
+    git clone https://github.com/epcim/salt-gun
+
+    # clone Your model
+    ENV=env/prod
+    git clone https://github.com/epcim/salt-model-kubernetes salt/$ENV
+
+    # add another environment (optional)
+    cd salt/$ENV
+    git worktree add --checkout -b staging ../staging origin/staging
+    git worktree list
+
+    # fetch some formulas
+    ./Formulafile
+
+    # You are done!
+    salt-ssh foundation user.list_users
 
 
 ## Setup
 
     # direnv is optional
-    apt-get install -y direnv python-pipenv
+    apt-get install -y python-pipenv jq direnv
 
 ### Configure python env
 
@@ -75,12 +99,37 @@ Example:
     # add to .envrc
     SALT_ENV=env/staging
 
+> You may want to configure ENV used in your `salt/master*` configuration file.
+
 ## Usage
 
-### Basic
+### Configure your salt model (pillar and sls files)
+
+Configure salt, except master/minion configuration files means setup SLS for pillars and states.
+These are located under `salt/states` and `salt/pillars`. If you are using environments, according
+example used in this doc, then your pillars are at `salt/env/NAME/states` and `salt/env/NAME/pillars`.
+
+Up to you now to fetch your states (formulas) and configure your pillars (metadata).
+
+#### Fetch your formulas from git repo:
+
+(Alternative)
+
+I use this step only to fetch base formulas to bootstrap salt-master on the remote side (on the managed environment).
 
     # update use() function, to specify formulas to use
     $EDITOR ./Formulafile
+
+#### Use containerized salt master
+
+* Fetch your formulas from docker container
+* Use container directly for individual actions/commands. State-less
+
+TBD
+
+
+
+### Basic
 
     # update rooster with your minions
     $EDITOR salt/roster
@@ -89,9 +138,9 @@ Example:
     ./Formulafile
 
     # salt it!
-    salt-ssh master user.list_users
-    salt-ssh master virtng.list_vms
-    salt-ssh master pillar.items
+    salt-ssh foundation user.list_users
+    salt-ssh foundation virtng.list_vms
+    salt-ssh foundation pillar.items
     salt-ssh \* state.apply
 
     # list states
@@ -106,52 +155,84 @@ Example:
     # TODO, salt-ssh -> saltify, contributors are welcome ;)
     # salt-ssh --roster cloud \* -r uptime
 
+
+
+
 ### Usage with ext_pillar reclass
 
 Reclass (The fork I use: https://github.com/salt-formulas/reclass) is handy YAML merger. It allows you to keep your model
 "static" pillar data structured and shared across your deployments, which drives your best-practice configuration to DRY and live.
 
-Clone your model repository, example:
-
-    git clone https://github.com/epcim/salt-models salt/reclass
-
 Enable reclass:
 
-    cp salt/examples/reclass.conf salt/master.d/
+    # envtpl (jinja2 engine) is used to properly set $ENV variable
+    envtpl --keep-template salt/master.d/reclass.conf.tpl
 
-Note: Mind `salt/reclass/pillars` are added to salt pillar path.
+> Mind `salt/$ENV/reclass/pillars` are added to salt pillar path.
 
 Now configure your model.
-Note: The steps below are for my `salt-models` and if you will use another model you will want to take other actions.
 
-    # mind, there is salt/reclass/pillars, regular salt pillars
-    # and there is salt/reclass/classes/k8s.mirantis.lab/.docs with
-    # - nodes-saltmaster.yml
-    # - pillars-saltmaster.yml
+> The steps below follow my `models` rules, keep in mind you are free to customize.
 
-    # now you can link/copy example salt-master spec. to your nodes directory
-    cp salt/reclass/classes/k8s.mirantis.lab/.doc/reclass-node-saltmaster.yml salt/reclass/nodes/cfg01.k8s.mirantis.lab.yml
+Clone your model repository:
 
-    # similarly for ignition salt pillar spec.
-    cp salt/reclass/classes/k8s.mirantis.lab/.doc/salt-ignition-pillar.yml salt/reclass/pillars/minion/cfg01.k8s.mirantis.lab.yml
+FIXME, TODO: set model as subrepo or do a trick with tracking other remote/branch
+
+    git clone https://github.com/epcim/salt-model-kubernetes salt/$ENV
+
+Add another environment from a branch (optional)
+
+    cd salt/$ENV
+    git worktree add --checkout -b staging ../staging origin/staging
+    git worktree list
 
 
-    # update your foundation configuration
-    vim salt/reclass/nodes/foundation.yml
+> Mind the `.doc(s)` folder on the example model repository.
 
-    # update defaults
-    vim salt/reclass/nodes/**/*.yml
-    vim salt/reclass/pillars/top.sls
+Your `salt/$ENV` might have these folders:
 
-Finally, let's check it.
+  - pillars (initial/additional salt pillars)
+  - states (additional salt states)
+  - reclass (reclass classes)
+  - .doc
 
-TBD
+
+Let's setup your new remote salt-master:
+
+    # set salt-master node
+    cat salt/$ENV/.docs/nodes-saltmaster.yml | envtpl | tee > salt/$ENV/reclass/nodes/<minion_id>.yml
+
+
+If you will want to use salt-run (setup foundation node):
+
+    ln -s salt/$ENV/reclass/nodes/<minion_id>.yml salt/$ENV/reclass/nodes/foundation.yml
+
+    # update your foundation configuration, if needed
+    vim salt/$ENV/reclass/nodes/foundation.yml
+
+
+Let's run some checks:
 
     python -m reclass.cli --inventory
     salt-run pillar.items
     salt-ssh foundation pillar.items
 
-## Backlog 
+
+### Usage with ext_pillar pillarstack
+
+TBD
+
+Clone your model.
+
+Your `salt/$ENV` might have these folders:
+
+  - pillars (initial/additional salt pillars)
+  - states (additional salt states)
+  - stack (reclass classes)
+  - .doc
+
+
+## Backlog
 
 Things to do later.
 
