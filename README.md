@@ -43,18 +43,17 @@ Finally, this repository assumes to be mounted as volume into an salt ready cont
     # mind `salt/master`, `salt/roster`, ...
     # mind `salt/pillars` and `salt/states` for customizations
 
-    # define salt env OR add this way your model to deployment
-    export SALT_ENV=env/kubernetes
-    envtpl --keep-template salt/master.d/env.conf.tpl -o salt/master.d/${SALT_ENV//\//_}.conf
-
-    # add your model
-    git clone https://github.com/epcim/salt-model-kubernetes salt/$SALT_ENV
-
-    # add another model (optional)
+    # add your model / env
     export SALT_ENV=env/workspace
     git clone https://github.com/epcim/salt-model-workspace salt/$SALT_ENV
+    envtpl --keep-template salt/master.d/env.conf.tpl -o salt/master.d/${SALT_ENV//\//_}.conf
 
-    # add another salt environment of existing model (optional)
+    # add another model (optional)
+    export SALT_ENV=env/kubernetes
+    git clone https://github.com/epcim/salt-model-kubernetes salt/$SALT_ENV
+    envtpl --keep-template salt/master.d/env.conf.tpl -o salt/master.d/${SALT_ENV//\//_}.conf
+
+    # add alternative salt environment of existing model (optional)
     cd salt/$SALT_ENV
     git worktree add --checkout -b staging ../$(basename $PWD)-staging origin/staging
     git worktree list
