@@ -1,8 +1,9 @@
 
 id: foundation
 
-log_level: info
-root_dir: ./
+log_level: quiet
+state_output: changes
+
 pillar_roots:
   base:
   - salt/pillars
@@ -14,7 +15,9 @@ file_roots:
   #test:
   #- salt/env/test/states
 
+root_dir: ./
 pki_dir: .pki
+#cachedir: .cache
 
 
 jinja_env: &jinja_env

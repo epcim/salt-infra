@@ -1,4 +1,7 @@
 
+roster_defaults:
+  user: pmichalec
+  sudo: true
 
 foundation:
   host: localhost

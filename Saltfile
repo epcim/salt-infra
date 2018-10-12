@@ -1,5 +1,15 @@
 salt-ssh:
   config_dir: ./salt
+  # ssh_log_file: ./var/log/salt/ssh
+  # roster_file: ./salt/roster
+  log-level: quiet
+  ssh_priv: agent-forwarding
+  ssh_max_procs: 10
+  ssh_wipe: True
+  ssh_rand_thin_dir: True
+  ssh_user: ubuntu
+  ssh_sudo: True
+  ssh_tty: True
 
 salt-cloud:
   config_dir: ./salt
