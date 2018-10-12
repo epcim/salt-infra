@@ -1,0 +1,17 @@
+
+id: foundation
+master: localhost
+
+pki_dir: .pki
+
+# logging
+#ssh_log_file: .var/log/salt/salt-ssh
+#log_file: .var/log/salt/minion
+#cachedir: .var/cache
+
+# pillar/salt env
+#state_top_saltenv: another
+#saltenv: base
+#pillarenv: base
+#pillarenv_from_saltenv: False
+

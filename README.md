@@ -20,6 +20,7 @@ Main features:
 * formulas pre-installed in stable salt-master container
 * formulas fetched on the fly from multiple git sources
 * infrastructure as a code, pillars are "treated" as your infrastructure model
+* environments used as individual models, while still keeping salt envs
 
 Optional:
 
@@ -39,19 +40,27 @@ Finally, this repository assumes to be mounted as volume into an salt ready cont
 
     git clone https://github.com/epcim/salt-gun
 
-    # define salt env
-    export SALT_ENV=env/prod
-    envtpl --keep-template salt/master.d/env.conf.tpl
+    # mind `salt/master`, `salt/roster`, ...
+    # mind `salt/pillars` and `salt/states` for customizations
 
-    # clone Your model
+    # define salt env OR add this way your model to deployment
+    export SALT_ENV=env/kubernetes
+    envtpl --keep-template salt/master.d/env.conf.tpl -o salt/master.d/${SALT_ENV//\//_}.conf
+
+    # add your model
     git clone https://github.com/epcim/salt-model-kubernetes salt/$SALT_ENV
 
-    # add another environment (optional)
+    # add another model (optional)
+    export SALT_ENV=env/workspace
+    git clone https://github.com/epcim/salt-model-workspace salt/$SALT_ENV
+
+    # add another salt environment of existing model (optional)
     cd salt/$SALT_ENV
-    git worktree add --checkout -b staging ../staging origin/staging
+    git worktree add --checkout -b staging ../$(basename $PWD)-staging origin/staging
     git worktree list
 
-    # fetch some formulas
+    # fetch some formulas (up to you)
+    # find . -name Formulafile
     ./Formulafile
 
     # You are done!
@@ -62,6 +71,14 @@ Finally, this repository assumes to be mounted as volume into an salt ready cont
 
     # direnv is optional
     apt-get install -y python-pipenv jq direnv
+
+### Configure shell environment
+
+It is convenient to keep all setup environment variables used in one file.
+
+For convenience, use `.envrc` on main directory of salt-gun and your model as you ENV/PROFILE file.
+
+All examples below expect storing/sourcing used env variables in this file.
 
 ### Configure python env
 
@@ -103,8 +120,13 @@ Example:
     SALT_ENV=env/base
 
     # configure master
-    envtpl --keep-template salt/master.d/env.conf.tpl
+    envtpl --keep-template salt/master.d/env.conf.tpl -o salt/master.d/${SALT_ENV//\//_}.conf
 
+    # If using multiple envs you may want to additionally set:
+    #   top_file_merging_strategy: same
+    #   env_order: ['base', 'prod', 'staging']
+    #   default_top: base
+    # docs: https://docs.saltstack.com/en/latest/ref/states/top.html#top-file-compilation-examples
 
 ## Usage
 
@@ -200,13 +222,13 @@ Your `salt/$SALT_ENV` might have these folders:
   - pillars (initial/additional salt pillars)
   - states (additional salt states)
   - reclass (reclass classes)
-  - .doc
+  - docs
 
 
 Let's setup your new remote salt-master:
 
     # set salt-master node
-    cat salt/$SALT_ENV/.docs/nodes-saltmaster.yml | envtpl | tee > salt/$SALT_ENV/reclass/nodes/<minion_id>.yml
+    cat salt/$SALT_ENV/docs/nodes-saltmaster.yml | envtpl | tee > salt/$SALT_ENV/reclass/nodes/<minion_id>.yml
 
 
 If you will want to use salt-run (setup foundation node):

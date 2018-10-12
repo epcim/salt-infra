@@ -1,0 +1,4 @@
+
+#base:
+  #  'foundation':
+    #- xyz-state

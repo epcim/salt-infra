@@ -6,15 +6,24 @@ root_dir: ./
 pillar_roots:
   base:
   - salt/pillars
-  #- salt/env/base/pillars
+  #test:
+  #- salt/env/test/pillars
 file_roots:
   base:
   - salt/states
-  #- salt/env/base/states
+  #test:
+  #- salt/env/test/states
 
 pki_dir: .pki
 
-# logging
-#ssh_log_file: .var/log/salt/salt-ssh
-#log_file: .var/log/salt/master
-#cachedir: .var/cache
+
+jinja_env: &jinja_env
+  line_statement_prefix: '%'
+  line_comment_prefix: '###'
+
+jinja_sls_env: *jinja_env
+
+#top_file_merging_strategy: merge
+#env_order: ['base', 'prod', 'staging']
+#default_top: base
+

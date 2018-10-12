@@ -5,3 +5,7 @@ foundation:
   priv: ~/.ssh/id_ed25519
   user: pmichalec
   sudo: True
+  #minion_opts:
+  #  saltenv: base
+  #  pillarenv: base
+  #  top_file_merging_strategy: merge # same, merge_all
