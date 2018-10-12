@@ -1,5 +1,5 @@
 
-# I'm a Gangster so here is my "gun" salt Salt.
+# I'm a Gangster so here is my "gun" to salt the Salt.
 
 This repository is minimal salt bootstrap workflow for thees who ever considered
 use salt modern, light.
@@ -74,9 +74,7 @@ Finally, this repository assumes to be mounted as volume into an salt ready cont
 ### Configure shell environment
 
 It is convenient to keep all setup environment variables used in one file.
-
 For convenience, use `.envrc` on main directory of salt-gun and your model as you ENV/PROFILE file.
-
 All examples below expect storing/sourcing used env variables in this file.
 
 ### Configure python env
@@ -256,7 +254,7 @@ Your `salt/$SALT_ENV` might have these folders:
   - pillars (initial/additional salt pillars)
   - states (additional salt states)
   - stack (reclass classes)
-  - .doc
+  - docs
 
 
 ## Backlog
