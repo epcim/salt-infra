@@ -1,26 +1,29 @@
 
-# I'm a Gangster so here is my "gun" to salt the Salt.
+# An OPS sniper rifle for "salt" states
 
-This repository is minimal salt bootstrap workflow for thees who ever considered
-use salt modern, light.
+This repository is minimal salt repository for infra bootstrap or single tasks.
 
-The focus is on minimal bootstrap process, simple git based workflow, reusable states.
-It bit target's "ansible like" usage, but "keep calm".
+The focus is on minimal setup, simple git based workflow, reusable states.
+Usage is like with "ansible", ie: define hosts, shoot them with states.
 
-The overall "minimalist" concepts:
+Supported workflows:
 
-1. Clone model repo, fetch base formulas, use salt-ssh, salt-cloud to manage hosts master-less
-2. Clone model repo, start containerized salt-master, use salt-ssh, salt-cloud to saltify/shoot minions
-3. Do (1) to bootstrap your salt-master from foundation node and do (2) to deploy salted infrastructure.
+1. Clone/add model repo, fetch sources, use salt-ssh, salt-cloud to manage hosts master-less
+2. Clone/add model repo, fetch sources, use with docker-compose salt-master
+3. Re-use existing repo, to deploy salt-master & configuration in Kubernetes
 
 Main features:
 
-* master-less setup, repo with states leveraging salt-ssh
-* salt-master running in a container docker/k8s
-* formulas pre-installed in stable salt-master container
-* formulas fetched on the fly from multiple git sources
-* infrastructure as a code, pillars are "treated" as your infrastructure model
-* environments used as individual models, while still keeping salt envs
+* master-less setup:
+  - repo with states leveraging salt-ssh
+  - salt-master running in a container
+  - 3rd party formulas fetched on the fly
+* salt-master setup"
+  - master image cicd and pre-installed formulas
+  - docker compose and kubernetes deployment
+* other
+  - infrastructure as a code, pillars are "treated" as your infrastructure model
+  - environments used as individual models, while still keeping salt envs in place
 
 Optional:
 
@@ -29,10 +32,6 @@ Optional:
   - nacl for pillar encryption
   - ...
 * enjoy multiple salt environments
-* salt(ed) container matrix builds per salt/os/arch/[reclass|formula|...] version
-* re-usable model, shared pillar data with best-practice default values
-
-Finally, this repository assumes to be mounted as volume into an salt ready container.
 
 
 
@@ -68,8 +67,15 @@ Finally, this repository assumes to be mounted as volume into an salt ready cont
 
 ## Setup
 
-    # direnv is optional
-    apt-get install -y python-pipenv jq direnv
+```sh
+# ubuntu
+apt-get install -y python-pipenv jq direnv
+
+# osx
+brew install pipenv direnv jq
+```
+
+Note: direnv is optional
 
 ### Configure shell environment
 
@@ -77,9 +83,10 @@ It is convenient to keep all setup environment variables used in one file.
 For convenience, use `.envrc` on main directory of salt-gun and your model as you ENV/PROFILE file.
 All examples below expect storing/sourcing used env variables in this file.
 
-### Configure python env
+### Configure
 
-To add custom python dependencies (reclass):
+Setup local python enviornment.
+Add custom python dependencies (ie: reclass):
 
     $EDITOR ./Pipfile
 
@@ -150,7 +157,6 @@ I use this step only to fetch base formulas to bootstrap salt-master on the remo
 * Use container directly for individual actions/commands. State-less
 
 TBD
-
 
 
 ### Basic

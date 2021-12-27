@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Usage:
-#    ./Saltfile
-#    ./Saltfile <inner function> <arg(s)>
+#    ./Formulafile
+#    ./Formulafile <inner function> <arg(s)>
 
 
 use() {
@@ -319,8 +319,7 @@ ask () {
   done
 }
 
-
-# allow to be sourced to use functions independently
+# if not sourced, continue execution
 if [[ "$BASH_SOURCE" == "$0" ]]; then
   set -eu -o pipefail
   defaults

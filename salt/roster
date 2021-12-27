@@ -3,7 +3,7 @@ roster_defaults:
   user: pmichalec
   sudo: true
 
-foundation:
+foundation: &foundation
   host: localhost
   priv: ~/.ssh/id_ed25519
   user: pmichalec
@@ -12,3 +12,5 @@ foundation:
   #  saltenv: base
   #  pillarenv: base
   #  top_file_merging_strategy: merge # same, merge_all
+
+dontpanic: *foundation

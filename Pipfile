@@ -8,8 +8,7 @@ name = "pypi"
 [packages]
 salt-ssh = "*"
 pygithub = "*"
-reclass = {path = "/home/pmichalec/hg2g/workspace-salt/reclass", editable=true}
-#reclass = {git = "https://github.com/salt-formulas/reclass", editable=true}
+reclass = {git = "https://github.com/salt-formulas/reclass", editable=true} # optional
 libvirt-python = "*"
 pycrypto = "*"
 python-openstackclient = "*"
