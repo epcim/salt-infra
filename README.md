@@ -263,6 +263,28 @@ Your `salt/$SALT_ENV` might have these folders:
   - docs
 
 
+## Deploy
+
+### Docker compose
+
+- https://github.com/cdalvaro/docker-salt-master
+
+```sh
+git clone https://github.com/cdalvaro/docker-salt-master deploy-docker
+cd deploy-docker
+make release
+
+# TODO
+# update compose file, user local image, refer to local volumes (pillars, states)
+
+cd ../
+docker-compose up -d deploy-docker
+```
+
+### K8s
+
+TODO
+
 ## Backlog
 
 Things to do later.

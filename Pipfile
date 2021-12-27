@@ -9,7 +9,7 @@ name = "pypi"
 salt-ssh = "*"
 pygithub = "*"
 reclass = {git = "https://github.com/salt-formulas/reclass", editable=true} # optional
-libvirt-python = "*"
+#libvirt-python = "*"
 pycrypto = "*"
 python-openstackclient = "*"
 os-client-config = "*"
@@ -22,4 +22,4 @@ envtpl = "*"
 # NOTE, IMHO pipenv don't support groups, use line to [dev-packages]
 
 [requires]
-python_version = "2.7"
+python_version = "3.9.7"
