@@ -1,0 +1,342 @@
+#!/bin/bash
+
+# Simple synchronization for remote formula sources
+# feel free to yur your own
+
+# Usage:
+#    ./Formulafile
+#    ./Formulafile <inner function> <arg(s)>
+
+
+use() {
+
+# Option 1, specific formula
+  #formula https://github.com/salt-formulas/salt-formula-linux
+  #formula https://github.com/salt-formulas/salt-formula-salt
+  #formula https://github.com/salt-formulas/salt-formula-reclass
+  #formula https://github.com/salt-formulas/salt-formula-fluentbit
+  #formula https://github.com/saltstack-formulas/users-formula
+
+# Option 2, all formulas from an GH org:
+  #FORMULA_VERSION="${SALT_FORMULA_VERSION:-master}"
+  #origin "${SALT_FORMULA_ORIGINS:-https://github.com/salt-formulas https://github.com/saltstack-formulas}"
+  #origin https://github.com/epcim
+
+}
+
+
+defaults() {
+  # env
+  # default single env under ./envs
+  # for multiple set SALT_ENV like "env/base", "env/kubernetes`")
+  ENV_PATH=salt/${SALT_ENV:-env/base}}
+
+  # salt roots
+  FORMULA_ROOT=${SALT_FORMULA_ROOT:-$ENV_PATH/formulas}
+  STATE_ROOT=${SALT_STATE_ROOT:-$ENV_PATH/states}
+  PILLAR_ROOT=${SALT_PILLAR_ROOT:-$ENV_PATH/pillars}
+
+  # env
+  LC_ALL=en_US.UTF-8
+  LANG=en_US.UTF-8
+}
+
+
+
+# Parse git dependencies from metadata.yml
+# $1 - path to <formula>/metadata.yml
+# sample to output:
+#    https://github.com/salt-formulas/salt-formula-git git
+#    https://github.com/salt-formulas/salt-formula-salt salt
+function fetchDependencies() {
+    METADATA="$1";
+    grep -E "^dependencies:" "$METADATA" &>/dev/null || return 0
+    (python3 - "$METADATA" | while read dep; do fetchGitFormula $dep; done) <<-DEPS
+		import sys,yaml
+		try:
+		  for dep in yaml.load(open(sys.argv[1], "r"))["dependencies"]:
+		    if len(set(('name', 'source')) & set(dep.keys())) == 2:
+		      print("{source} {name}".format(**dep))
+		except Exception as e:
+		  print("[W] {}".format(e.__doc__))
+		  print("[W] {}".format(e.message))
+		  pass
+		DEPS
+}
+
+
+# Read formula name from meetadata.yml
+# $1 - path to <formula>/metadata.yml
+function getFormulaName() {
+  python3 - "$1" <<-READ_NAME
+		try:
+		  import sys,yaml;print(yaml.load(open(sys.argv[1], "r"))["name"]);
+		except Exception as e:
+		  print("[W] {}".format(e.__doc__))
+		  print("[W] {}".format(e.message))
+		  pass
+		READ_NAME
+}
+
+
+# Fetch formula from git repo
+# $1 - formula git repo url
+# $2 - formula name
+# $3 - branch
+function fetchGitFormula() {
+
+    set +eu
+    test -n "${FETCHED}" || declare -a FETCHED=()
+    set -eu
+
+    if [ -n "$1" ]; then
+
+      if ! [[ "${FETCHED[*]}" =~ $name ]]; then # dependency, not yet fetched
+
+        # set gh repo https://salt-formulas/salt-formula-salt -> repo=$FORMULA_ROOT/salt-formulas/salt-formula-salt
+        repo=$(echo $1 | awk -F'/' '{ print substr($0, index($0,$4)) }')
+
+        # update if already cloned
+        if [ -e "$FORMULA_ROOT/$repo" ]; then
+            pushd "$FORMULA_ROOT/$repo" &>/dev/null
+            git checkout $branch; git pull -r
+            popd &>/dev/null
+        # new clone
+        else
+            echo -e "[I] git clone $origin $FORMULA_ROOT/$repo -b $branch"
+
+            # Fallback to the master branch if the branch doesn'dt exist for this repository
+            git ls-remote --exit-code --heads $origin $branch ||\
+              branch=master
+
+            if ! git clone "$origin" "$FORMULA_ROOT/$repo" -b "$branch"; then
+              echo -e "[E] Fetching formula from $origin failed."
+              return 1
+            fi
+        fi
+
+        # A metadata.yml is github.com/salt-formulas specific
+        # - use formula name as in metadata
+        [[ -e  "$FORMULA_ROOT/$repo/metadata.yml" ]] &&\
+          name=$(getFormulaName "$FORMULA_ROOT/$repo/metadata.yml")
+
+
+        # CONFIGURE FORMULA IN SALT ENV
+        if [ ! -e  "$STATE_ROOT/$name" ]; then
+          pushd $STATE_ROOT
+          ln -svf $(realpath --relative-to=$PWD $FORMULA_ROOT/$repo/$name) $name || true
+          popd
+        fi
+
+        # Update/Install dependencies
+        if [ $STATE_ROOT/$name -ef $FORMULA_ROOT/$repo/$name ]; then
+          echo -e "[I] Update formula dependencies."
+
+          # install library dependencies
+          [[ -e  $FORMULA_ROOT/$repo/requirements.txt ]] &&\
+            pip install -r $FORMULA_ROOT/$repo/requirements.txt
+          [[ -e  $FORMULA_ROOT/$repo/Pipfile ]] && {
+            pushd $FORMULA_ROOT/$repo
+            pipenv install --system
+            popd
+          }
+
+          # copy _states, _modules, _etc ...
+          for c in $(/bin/ls $FORMULA_ROOT/$repo | grep '^_' | xargs -n1 --no-run-if-empty); do
+            [[ -d $STATE_ROOT/$c ]] || mkdir -p $STATE_ROOT/$c
+            pushd $STATE_ROOT/$c
+            ls $(realpath --relative-to=$PWD $FORMULA_ROOT/$repo/$c)/*.py | xargs -n1 --no-run-if-empty ln -svf
+            popd
+          done
+
+          # install formula dependencies
+          FETCHED+=($name)
+          if [ -e  "$FORMULA_ROOT/$repo/metadata.yml" ]; then
+            fetchDependencies "$FORMULA_ROOT/$repo/metadata.yml"
+          fi
+        fi
+        echo -e "[I] Formula "$name" fetched."
+
+      else
+        # dependency already satisfied
+        echo -e "[I] Dependency formula "$name" already satisfied."
+      fi
+
+    else
+      echo -e '[I] Usage: fetchGitFormula git_repo_uri [branch] [local formula directory name]'
+    fi
+}
+
+
+function setupPyEnv() {
+  MODULES="pygithub pyyaml"
+  pip3 install --upgrade $MODULES || {
+    which pipenv || {
+      pip install --upgrade pipenv
+    }
+    pipenv --three
+    pipenv install $MODULES
+  }
+}
+
+function listRepos_github_com() {
+  #export python=$(pipenv --py || (setupPyEnv &>/dev/null; pipenv --py))
+  if [ -e Pipfile.lock ]; then python=$(pipenv --py); else python=python3; fi
+  $python - "$1" <<-LIST_REPOS
+		import sys
+		import github
+		
+		def make_github_agent(user=None, password=None):
+		    """ Create github agent to auth """
+		    if not user:
+		        return github.Github()
+		    else:
+		        return github.Github(user, password)
+		
+		def get_org_repos(gh, org_name):
+		    org = gh.get_organization(org_name)
+		    for repo in org.get_repos():
+		        yield repo.name
+		
+		try:
+		  print(*get_org_repos(make_github_agent(), str(sys.argv[1])), sep="\n")
+		except Exception as e:
+		  print("[E] {}".format(e.__doc__))
+		  print("[E] {}".format(e.message))
+		  sys.exit(1)
+		LIST_REPOS
+}
+
+# Fetch all formula repositories from origin
+# $1 githost (github_com)
+# $2 orgname (salt-formulas)
+function fetchGitOrigin() {
+
+  repos="$(listRepos_$githost "$orgname" | xargs -n1 --no-run-if-empty| sort)"
+  if [ ! -n "$repos" ]; then
+    echo "[W] Error caught or no repositories found at $source. Exiting.";
+    exit 0;
+  fi
+
+  # fetch all "formula" repositories
+  for repo in $(echo ${repos} | xargs -n1 --no-run-if-empty); do
+    # TODO, avoid a hardcoded pattern to filter formula repos
+    if [[ $repo =~ ^(.*formula.*)$ ]]; then
+      formula "$source/$repo";
+    fi
+  done;
+}
+
+# wrapper/alias for fetchGitOrigin
+# Fetch all formulas from git/github origin
+# $1 - space separated list of origins
+function origin() {
+
+  # iterate over all sources
+  for source in $(echo $@ | xargs -n1 --no-run-if-empty); do
+    githost=$(echo ${source//\./_} | awk -F'/' '{print $3}')
+    orgname=$(echo ${source//\./_} | awk -F'/' '{print $4}')
+
+    echo -e "\n[I] Origin $githost/$orgname"
+    fetchGitOrigin $githost $orgname
+  done
+}
+
+# wrapper/alias for fetchGitFormula
+# Fetch formula from git repo
+# $1 - formula git repo url
+# $2 - formula name (optional)
+# $3 - branch (optional)
+function formula() {
+
+
+  # WORKAROUND
+  # FIXME, TEMP fix for not yet up to date gh:salt-formulas -> s/tcpcloud/salt-formulas/
+  origin="${1/tcpcloud/salt-formulas}"
+
+  set +eu +o pipefail
+  # guess formula name (if not provided as 2nd arg)
+  test -n "$2" && name=$2 || name="$(echo ${origin//*\/} | sed -e 's/-formula$//' -e 's/^salt-formula-//' -e 's/^formula-//')"
+  # guess/set formula branch (if not provided as 3rd arg)
+  test -n "$3" && branch=$3 || branch=${FORMULA_VERSION:-master}
+  set -eu -o pipefail
+
+  echo -e "\n[I] Formula $origin/$name@$branch"
+  fetchGitFormula "$origin" "$name" "$branch"
+}
+
+
+function hooks() {
+  if [[ -e $P/.hooks ]]; then
+    ask "Run hooks?" N && $P/.hooks
+  fi
+}
+
+pushd () {
+    command pushd "$@" > /dev/null
+}
+
+popd () {
+    command popd "$@" > /dev/null
+}
+
+die () {
+  echo "$@"
+  exit 1
+}
+
+
+ask () {
+  # https://djm.me/ask
+  local prompt default reply
+
+  while true; do
+
+   if [ "${2:-}" = "Y" ]; then
+       prompt="Y/n"
+       default=Y
+   elif [ "${2:-}" = "N" ]; then
+       prompt="y/N"
+       default=N
+   else
+       prompt="y/n"
+       default=
+   fi
+
+   # Ask the question (not using "read -p" as it uses stderr not stdout)
+   echo -en "\n$1 [$prompt] "
+
+   # Read the answer (use /dev/tty in case stdin is redirected from somewhere else)
+   read reply </dev/tty
+
+   # Default?
+   if [ -z "$reply" ]; then
+       reply=$default
+   fi
+
+   # Check if the reply is valid
+   case "$reply" in
+       Y*|y*) return 0 ;;
+       N*|n*) return 1 ;;
+   esac
+
+  done
+}
+
+# if not sourced, continue execution
+if [[ "$BASH_SOURCE" == "$0" ]]; then
+  set -eu -o pipefail
+  defaults
+  [[ -e $SWD ]] || mkdir -p $ENV_PATH/../orchestrate
+  [[ -e $FORMULA_ROOT ]] || mkdir -p $FORMULA_ROOT
+  [[ -e $PILLAR_ROOT ]] || mkdir -p $PILLAR_ROOT
+  [[ -e $STATE_ROOT ]] || mkdir -p $STATE_ROOT
+  if [[ $# -gt 0 ]]; then
+    fn=$1
+    shift
+    $fn $@
+  else
+    use
+  fi
+fi
+
