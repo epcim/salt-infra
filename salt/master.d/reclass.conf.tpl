@@ -2,11 +2,11 @@ pillar_opts: False
 
 pillar_roots:
   base:
-  - salt/{{SALT_ENV}}/reclass/pillars
+  - salt/env/{{ENV}}/reclass/pillars
 
 reclass: &reclass
   storage_type: yaml_fs
-  inventory_base_uri: ./salt/{{SALT_ENV}}/reclass/
+  inventory_base_uri: ./salt/env/{{ENV}}/reclass/
   ignore_class_notfound: True
   ignore_class_regexp:
   - '.*'

@@ -7,13 +7,10 @@ state_output: changes
 pillar_roots:
   base:
   - salt/pillars
-  #test:
-  #- salt/env/test/pillars
+
 file_roots:
   base:
   - salt/states
-  #test:
-  #- salt/env/test/states
 
 root_dir: ./
 pki_dir: .pki
