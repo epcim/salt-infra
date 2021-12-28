@@ -1,21 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Usage:
 #    ./Formulafile
 #    ./Formulafile <inner function> <arg(s)>
+#    ./Formulafile ./path/to/Formulafile
 
 
 use() {
+  true
 
-# Option 1, specific formula
+  # Option 1, specific formula
   #formula https://github.com/salt-formulas/salt-formula-linux
-  #formula https://github.com/salt-formulas/salt-formula-salt
-  #formula https://github.com/salt-formulas/salt-formula-reclass
-  #formula https://github.com/salt-formulas/salt-formula-fluentbit
   #formula https://github.com/saltstack-formulas/users-formula
+  #formula https://github.com/saltstack-formulas/packages-formula
 
-# Option 2, all formulas from an GH org:
-  #FORMULA_VERSION="${SALT_FORMULA_VERSION:-master}"
+  # Option 2, all formulas from an GH org:
   #origin "${SALT_FORMULA_ORIGINS:-https://github.com/salt-formulas https://github.com/saltstack-formulas}"
   #origin https://github.com/epcim
 
@@ -23,18 +22,17 @@ use() {
 
 
 defaults() {
-  # env
-  SWD=${SALT_DIR:-$PWD/salt}
-  ENV=${SALT_ENV:-.} # should have an value like "env/base", "env/prod"
+  BASE_DIR=${SALT_ROOT:-$1}
 
   # salt roots
-  FORMULA_ROOT=${SALT_FORMULA_ROOT:-$SWD/$ENV/formulas}
-  STATE_ROOT=${SALT_STATE_ROOT:-$SWD/$ENV/states}
-  PILLAR_ROOT=${SALT_PILLAR_ROOT:-$SWD/$ENV/pillars}
+  export FORMULA_ROOT=${SALT_FORMULA_ROOT:-$BASE_DIR/formulas}
+  export STATE_ROOT=${SALT_STATE_ROOT:-$BASE_DIR/states}
+  export PILLAR_ROOT=${SALT_PILLAR_ROOT:-$BASE_DIR/pillars}
 
   # env
   LC_ALL=en_US.UTF-8
   LANG=en_US.UTF-8
+
 }
 
 
@@ -91,21 +89,30 @@ function fetchGitFormula() {
 
         # set gh repo https://salt-formulas/salt-formula-salt -> repo=$FORMULA_ROOT/salt-formulas/salt-formula-salt
         repo=$(echo $1 | awk -F'/' '{ print substr($0, index($0,$4)) }')
+        [[ ! "$branch" =~ (main|master) ]] && repo="$repo-$branch" || true
 
+        if [ -e "$FORMULA_ROOT/$repo" ]; then # FIXME, add branch to path here
         # update if already cloned
-        if [ -e "$FORMULA_ROOT/$repo" ]; then
             pushd "$FORMULA_ROOT/$repo" &>/dev/null
-            git checkout $branch; git pull -r
+            # TODO: use https://github.com/epcim/git-cross to checkout as partial worktree
+            #git fetch $(git rev-parse --abbrev-ref HEAD);
+            set +e
+            git stash clear
+            git stash -q
+            git pull -r
+            git stash pop -q
+            set -e
             popd &>/dev/null
-        # new clone
         else
+        # new clone
             echo -e "[I] git clone $origin $FORMULA_ROOT/$repo -b $branch"
 
-            # Fallback to the master branch if the branch doesn'dt exist for this repository
+            # Fallback to the master branch if the branch doesn't exist for this repository
             git ls-remote --exit-code --heads $origin $branch ||\
               branch=master
 
-            if ! git clone "$origin" "$FORMULA_ROOT/$repo" -b "$branch"; then
+            [[ ! "$branch" =~ (main|master) ]] && p_branch="-b $branch"
+            if ! git clone "$origin" "$FORMULA_ROOT/$repo" "$p_branch"; then
               echo -e "[E] Fetching formula from $origin failed."
               return 1
             fi
@@ -116,11 +123,11 @@ function fetchGitFormula() {
         [[ -e  "$FORMULA_ROOT/$repo/metadata.yml" ]] &&\
           name=$(getFormulaName "$FORMULA_ROOT/$repo/metadata.yml")
 
-
         # CONFIGURE FORMULA IN SALT ENV
         if [ ! -e  "$STATE_ROOT/$name" ]; then
+          r_path=$(realpath --relative-to=$STATE_ROOT $FORMULA_ROOT/$repo/$name)
           pushd $STATE_ROOT
-          ln -svf $(realpath --relative-to=$PWD $FORMULA_ROOT/$repo/$name) $name || true
+            ln -svf $r_path $name || true
           popd
         fi
 
@@ -133,15 +140,16 @@ function fetchGitFormula() {
             pip install -r $FORMULA_ROOT/$repo/requirements.txt
           [[ -e  $FORMULA_ROOT/$repo/Pipfile ]] && {
             pushd $FORMULA_ROOT/$repo
-            pipenv install --system
+              pipenv run pip install || pipenv install --system
             popd
           }
 
           # copy _states, _modules, _etc ...
           for c in $(/bin/ls $FORMULA_ROOT/$repo | grep '^_' | xargs -n1 --no-run-if-empty); do
             [[ -d $STATE_ROOT/$c ]] || mkdir -p $STATE_ROOT/$c
+            r_path=$(realpath --relative-to=$STATE_ROOT $FORMULA_ROOT/$repo/$c)
             pushd $STATE_ROOT/$c
-            ls $(realpath --relative-to=$PWD $FORMULA_ROOT/$repo/$c)/*.py | xargs -n1 --no-run-if-empty ln -svf
+              ls $r_path/*.py | xargs -n1 --no-run-if-empty ln -svf
             popd
           done
 
@@ -245,16 +253,15 @@ function origin() {
 # $3 - branch (optional)
 function formula() {
 
-
   # WORKAROUND
-  # FIXME, TEMP fix for not yet up to date gh:salt-formulas -> s/tcpcloud/salt-formulas/
+  # TEMP fix for not yet up to date gh:salt-formulas -> s/tcpcloud/salt-formulas/
   origin="${1/tcpcloud/salt-formulas}"
 
   set +eu +o pipefail
   # guess formula name (if not provided as 2nd arg)
   test -n "$2" && name=$2 || name="$(echo ${origin//*\/} | sed -e 's/-formula$//' -e 's/^salt-formula-//' -e 's/^formula-//')"
   # guess/set formula branch (if not provided as 3rd arg)
-  test -n "$3" && branch=$3 || branch=${FORMULA_VERSION:-master}
+  test -n "$3" && branch=$3 || branch=main
   set -eu -o pipefail
 
   echo -e "\n[I] Formula $origin/$name@$branch"
@@ -319,19 +326,26 @@ ask () {
   done
 }
 
-# if not sourced, continue execution
+
+# allow to be sourced to use functions independently
 if [[ "$BASH_SOURCE" == "$0" ]]; then
   set -eu -o pipefail
-  defaults
-  [[ -e $SWD ]] || mkdir -p $SWD/orchestrate
-  [[ -e $FORMULA_ROOT ]] || mkdir -p $FORMULA_ROOT
-  [[ -e $PILLAR_ROOT ]] || mkdir -p $PILLAR_ROOT
-  [[ -e $STATE_ROOT ]] || mkdir -p $STATE_ROOT
-  if [[ $# -gt 0 ]]; then
+  defaults "$(dirname $0)"
+  #[[ -e $FORMULA_ROOT ]] || mkdir -p $FORMULA_ROOT
+  #[[ -e $PILLAR_ROOT ]] || mkdir -p $PILLAR_ROOT
+  #[[ -e $STATE_ROOT ]] || mkdir -p $STATE_ROOT
+  if [[ $# -eq 1 ]]; then
+    # process argument as Formulafile
+    defaults "$(dirname $1)"
+    source "$1"
+    use
+  elif [[ $# -gt 1 ]]; then
+    # process arguments as function calls
     fn=$1
     shift
     $fn $@
   else
+    # process itself
     use
   fi
 fi
