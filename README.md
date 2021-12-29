@@ -1,27 +1,26 @@
 
 # Repository to Salt infrastructure deployment
 
-Minimal salt setup for infra bootstrap or single shot.
-Git ops based workflow.
-Reusable, pillars and states comes as independent repository per salt env.
-Usage is like with "ansible", ie: define hosts, pillars, states and apply.
+Salt setup template repository.
+
+- Reusable, pillars and states comes as independent repository per salt env.
+- Usage is like with "ansible", ie: define hosts, pillars, states and apply.
 
 Supported workflows:
 
-1. use locally with salt-ssh, salt-cloud to manage hosts masterless
+1. use locally with salt-ssh/heist-salt to manage hosts (masterless)
 2. deploy salt-master with docker-compose
 3. deploy salt-master to Kubernetes
 
 Main features:
 
-* master-less setup:
+* masterless setup:
   - repo with states leveraging salt-ssh
-  - salt-master running in a container
   - 3rd party formulas fetched on the fly
 * salt-master setup:
-  - master image cicd and pre-installed formulas
-  - docker-compose and kubernetes deployment
-* other
+  - dockerfile, kubernetes deployment
+  - re-use the same repo as for bootstrap
+* both
   - infrastructure as a code, pillars are "treated" as your infrastructure model
   - share/use environments with friends and re-use in your own salt-master setup
   - enjoy multiple salt environments (ie: mix pillar and file roots)
@@ -47,46 +46,62 @@ Salt terminology:
 
 Specific:
 - Salt model, is this repository
-  - used to tight everything together
+  - it's like salt-master config directory to glue everything together
 - Salt environment, (under ./salt/env) can be "base, dev, prod" or named per your clusters names
   - it's salt-master agnostic specification for the infrastructure
   - you can do diff between these to transfer states and pillars
   - you can re-use somebody else and mix your own setup in model
 
-## TL;DR locally
 
-    git clone https://github.com/epcim/salt-sniper
+What to read:
+- https://salt.tips
+- heist-salt, Heist is to make deployment and management of Salt easy (once it's really working and docs available)
 
-    # mind `salt/master`, `salt/roster`, ...
-    # mind `salt/pillars` and `salt/states` for customizations
+Salt
+- instalation options, https://repo.saltproject.io/
+- single binnary installation, https://repo.saltproject.io/salt/singlebin/
 
-    # add your models / envs (ie: env/base, env/test, env/prod)
-    git submodule add https://github.com/epcim/salt-model-base salt/env/base
-    git submodule add https://github.com/epcim/salt-model-apealive salt/env/apealive
-    git submodule add https://github.com/epcim/salt-model-ipxeboot salt/env/ipxeboot
+## TL;DR
 
-    export SALT_ENVS="$(ls --color=never salt/env)"
-    for ENV in $SALT_ENVS; do
-      export ENV
-      pipenv run envtpl --keep-template salt/master.d/env.conf.tpl -o salt/master.d/${ENV}.conf
-    done
 
-    # fetch dependencies formulas (your own way)
-    find ./salt/env -name Formulafile |\
-      xargs -r -I% SALT_FORMULA_ROOT=./salt/formulas ./salt/Formulafile %
+```
+git clone https://github.com/epcim/salt-sniper
 
-    # You are done!
-    salt-ssh \* user.list_users
+# mind `salt/master`, `salt/roster`, ...
+# mind `salt/pillars` and `salt/states` for customizations
+
+# add your models / envs (ie: env/base, env/test, env/prod)
+# one of
+git submodule add https://github.com/epcim/salt-model-apealive salt/env
+# or (multi env)
+git submodule add https://github.com/epcim/salt-model-base salt/env/base
+git submodule add https://github.com/epcim/salt-model-apealive salt/env/apealive
+git submodule add https://github.com/epcim/salt-model-ipxeboot salt/env/ipxeboot
+
+export SALT_ENVS="$(ls --color=never salt/env)"
+for ENV in ${SALT_ENVS:-base}; do
+  export ENV
+  pipenv run envtpl --keep-template salt/master.d/env.conf.tpl -o salt/master.d/${ENV}.conf
+done
+
+# fetch dependencies formulas (your own way), this is what I use
+find ./salt/env -name Formulafile |\
+  xargs -r -I% SALT_FORMULA_ROOT=./salt/formulas ./salt/Formulafile %
+
+# You are done!
+salt-ssh \* test.ping
+
+```
 
 
 ### Local setup
 
 ```sh
 # ubuntu
-apt-get install -y python-pipenv jq direnv
+apt-get install -y python-pipenv jq direnv salt-master
 
 # osx
-brew install pipenv direnv jq
+brew install pipenv direnv jq salt
 
 direnv allow .
 pipenv install
@@ -101,6 +116,13 @@ $EDITOR ./Pipfile
 pipenv update
 ```
 
+### Bootstrap
+
+Boostrap a foundation node. TODO
+
+```sh
+salt-run state.apply
+```
 
 ### Configure salt-master
 
@@ -122,8 +144,15 @@ Docs: https://docs.saltstack.com/en/latest/ref/states/top.html#top-file-compilat
 
 ## Deploy
 
+### Heist
+
+```
+heist --log-level info salt.minion -t minion1 -R salt/roster.d # NOTE TESTED
+```
+
 ### docker-compose
 
+See:
 - https://github.com/cdalvaro/docker-salt-master
 
 ```sh

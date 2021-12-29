@@ -1,25 +1,33 @@
 salt-ssh:
   config_dir: ./salt
-  # ssh_log_file: ./var/log/salt/ssh
-  # roster_file: ./salt/roster
+  ssh_log_file: salt-ssh.log
+
+  # roster
+  roster_file: ./salt/roster
+  # 3004
+  #roster_file: dir
+  #roster_file_dir: ./salt/roster.d
+
   log-level: quiet
-  ssh_priv: agent-forwarding
   ssh_max_procs: 10
-  ssh_wipe: True
   ssh_rand_thin_dir: True
-  ssh_user: ubuntu
-  ssh_sudo: True
+  ssh_wipe: True
   ssh_tty: True
+  ssh_sudo: True
+  #ssh_user:
+  #ssh_priv: agent-forwarding
 
 salt-cloud:
   config_dir: ./salt
-
+  ssh_log_file: salt-cloud.log
 
 # opitionated below:
 salt-run:
   config_dir: ./salt
-  #id: foundation
+  ssh_log_file: salt-run.log
+  id: foundation
 
 salt:
   config_dir: ./salt
-  #id: foundation
+  ssh_log_file: salt.log
+  id: foundation
