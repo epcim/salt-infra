@@ -98,10 +98,10 @@ salt-ssh \* test.ping
 
 ```sh
 # ubuntu
-apt-get install -y python-pipenv jq direnv
+apt-get install -y python-pipenv jq direnv salt-master
 
 # osx
-brew install pipenv direnv jq
+brew install pipenv direnv jq salt
 
 direnv allow .
 pipenv install

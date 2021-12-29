@@ -1,0 +1,6 @@
+
+.pki
+.var
+*.log
+
+#salt/env

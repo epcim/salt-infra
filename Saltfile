@@ -3,10 +3,10 @@ salt-ssh:
   ssh_log_file: salt-ssh.log
 
   # roster
-  # roster_file: ./salt/roster
+  roster_file: ./salt/roster
   # 3004
-  roster_file: dir
-  roster_file_dir: ./salt/roster.d
+  #roster_file: dir
+  #roster_file_dir: ./salt/roster.d
 
   log-level: quiet
   ssh_max_procs: 10
