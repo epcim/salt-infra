@@ -6,6 +6,7 @@ name = "pypi"
 [dev-packages]
 
 [packages]
+heist-salt = "*"
 salt-ssh = "*"
 pygithub = "*"
 reclass = {git = "https://github.com/salt-formulas/reclass", editable=true} # optional
@@ -17,9 +18,14 @@ shade = "*"
 envtpl = "*"
 #reclass = {git = "https://github.com/salt-formulas/reclass", editable=true}
 # ^^ pipenv install -e git+https://github.com/salt-formulas/reclass.git#egg=reclass
+# heist
+# https://salt.tips/new-features-in-salt-silicon/
+pop-config==6.11 # ^^ due bugs
+heist==5.0.0
+heist-salt==4.0.0
 
 [optional-packages]
 # NOTE, IMHO pipenv don't support groups, use line to [dev-packages]
 
 [requires]
-python_version = "3.9.7"
+python_version = "3"

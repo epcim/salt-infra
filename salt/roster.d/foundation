@@ -3,14 +3,15 @@ roster_defaults:
   user: epcim
   #sudo: true
 
-foundation: &foundation
+#foundation
+foundation: 
   host: localhost
   priv: ~/.ssh/id_ed25519
-  #user: epcim
+  user: epcim
   #sudo: True
   #minion_opts:
   #  saltenv: base
   #  pillarenv: base
   #  top_file_merging_strategy: merge # same, merge_all
 
-dontpanic: *foundation
+#dontpanic: *foundation
