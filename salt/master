@@ -27,3 +27,7 @@ jinja_sls_env: *jinja_env
 #env_order: ['base', 'prod', 'staging']
 #default_top: base
 
+roster_defaults:
+  #user: epcim
+  sudo: true
+

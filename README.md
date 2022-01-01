@@ -1,6 +1,16 @@
 
 # Repository to Salt infrastructure deployment
 
+DISCLAIMER:
+- I have used this setup around 2018, on linux
+- As of 2021 and on OSX, running salt locally (as ansible) does not work well for multiple bugs and issues (in salt-ssh, missing documentation for heist, pillarenvs, ...)
+- Further I have decided for Ansible infrastructure bootstrap (as painless, more audience as well as examples.
+  However later nodes are managed salt-minions.
+
+
+--- 
+
+
 Salt setup template repository.
 
 - Reusable, pillars and states comes as independent repository per salt env.
@@ -43,6 +53,7 @@ Salt terminology:
 - top.sls, used in States and Pillars direcrtory, to assign them to minions (by name, by grains,  ...)
 - ...
 - ... [Architecture](https://docs.saltproject.io/en/latest/topics/salt_system_architecture.html#what-is-salt)
+- ... https://blog.networktocode.com/post/learn-salt-with-ansible-references/
 
 Specific:
 - Salt model, is this repository
@@ -70,9 +81,8 @@ git clone https://github.com/epcim/salt-sniper
 # mind `salt/master`, `salt/roster`, ...
 # mind `salt/pillars` and `salt/states` for customizations
 
-# add your models / envs (ie: env/base, env/test, env/prod)
-# one of
-git submodule add https://github.com/epcim/salt-model-apealive salt/env
+# add your model / envs (ie: env/base, env/test, env/prod)
+git submodule add https://github.com/epcim/salt-model-apealive salt/env/apealive
 # or (multi env)
 git submodule add https://github.com/epcim/salt-model-base salt/env/base
 git submodule add https://github.com/epcim/salt-model-apealive salt/env/apealive
@@ -86,7 +96,7 @@ done
 
 # fetch dependencies formulas (your own way), this is what I use
 find ./salt/env -name Formulafile |\
-  xargs -r -I% SALT_FORMULA_ROOT=./salt/formulas ./salt/Formulafile %
+  xargs -r echo SALT_FORMULA_ROOT=./salt/formulas ./salt/Formulafile
 
 # You are done!
 salt-ssh \* test.ping
@@ -97,15 +107,6 @@ salt-ssh \* test.ping
 ### Local setup
 
 ```sh
-# ubuntu
-apt-get install -y python-pipenv jq direnv salt-master
-
-# osx
-brew install pipenv direnv jq salt
-
-direnv allow .
-pipenv install
-pipenv shell
 ```
 
 Direnv is optional.
@@ -121,7 +122,41 @@ pipenv update
 Boostrap a foundation node. TODO
 
 ```sh
-salt-run state.apply
+# ubuntu
+sudo curl -fsSL -o /usr/share/keyrings/salt-archive-keyring.gpg https://repo.saltproject.io/py3/ubuntu/20.04/amd64/latest/salt-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/salt-archive-keyring.gpg arch=amd64] https://repo.saltproject.io/py3/ubuntu/20.04/amd64/latest focal main" |\
+  sudo tee /etc/apt/sources.list.d/salt.list
+sudo apt-get update
+sudo apt-get install -y pipenv jq direnv salt-minion salt-ssh
+
+# osx
+brew install pipenv direnv jq salt
+
+direnv allow .
+pipenv install
+pipenv shell
+
+sudo apt-get install -y openssh-server salt-minion salt-ssh ssh-askpass
+
+# optional, recomended if foundation = localhost
+ssh-keygen
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+echo "$USER ALL=(ALL:ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/$USER
+ssh localhost "sudo uptime" # to review
+
+# apply foundation node states
+salt-ssh -H
+salt-ssh foundation state.show_top
+salt-ssh foundation state.apply
+
+# apply any other node
+salt-ssh \* -H
+salt-ssh \* state.apply test=true -i --roster-file=salt/env/apealive/roster
+
+# optional
+#sudo apt-get install -y salt-master
+#sudo unlink /etc/systemd/system/multi-user.target.wants/salt-master.service
+#sudo ln -s /etc/systemd/system/multi-user.target.wants/salt-master.service /lib/systemd/system/salt-master.service
 ```
 
 ### Configure salt-master
